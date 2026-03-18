@@ -569,6 +569,21 @@ document.addEventListener("DOMContentLoaded", () => {
         `
         }
       </div>
+      <div class="share-buttons">
+        <span class="share-label">Share:</span>
+        <button class="share-btn share-twitter tooltip" data-activity="${name}" aria-label="Share on X (Twitter)">
+          𝕏
+          <span class="tooltip-text">Share on X (Twitter)</span>
+        </button>
+        <button class="share-btn share-whatsapp tooltip" data-activity="${name}" aria-label="Share on WhatsApp">
+          💬
+          <span class="tooltip-text">Share on WhatsApp</span>
+        </button>
+        <button class="share-btn share-copy tooltip" data-activity="${name}" aria-label="Copy link">
+          🔗
+          <span class="tooltip-text">Copy link</span>
+        </button>
+      </div>
     `;
 
     // Add click handlers for delete buttons
@@ -587,7 +602,63 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Add click handlers for share buttons
+    activityCard.querySelector(".share-twitter").addEventListener("click", () => {
+      shareActivity("twitter", name, details);
+    });
+    activityCard.querySelector(".share-whatsapp").addEventListener("click", () => {
+      shareActivity("whatsapp", name, details);
+    });
+    activityCard.querySelector(".share-copy").addEventListener("click", (event) => {
+      shareActivity("copy", name, details, event.currentTarget);
+    });
+
     activitiesList.appendChild(activityCard);
+  }
+
+  // Function to share an activity
+  function shareActivity(platform, name, details, buttonElement) {
+    const schedule = formatSchedule(details);
+    const shareText = `Check out "${name}" at Mergington High School! ${details.description} Schedule: ${schedule}`;
+    const shareUrl = window.location.href;
+
+    if (platform === "twitter") {
+      const twitterUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+      window.open(twitterUrl, "_blank", "noopener,noreferrer");
+    } else if (platform === "whatsapp") {
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + " " + shareUrl)}`;
+      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    } else if (platform === "copy") {
+      const textToCopy = shareText + " " + shareUrl;
+      const showCopied = () => {
+        const tooltip = buttonElement.querySelector(".tooltip-text");
+        const originalText = tooltip.textContent;
+        tooltip.textContent = "Copied!";
+        setTimeout(() => {
+          tooltip.textContent = originalText;
+        }, 2000);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy).then(showCopied).catch(() => {
+          showMessage("Could not copy to clipboard.", "error");
+        });
+      } else {
+        // Fallback for non-HTTPS contexts
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand("copy");
+          showCopied();
+        } catch {
+          showMessage("Could not copy to clipboard.", "error");
+        }
+        document.body.removeChild(textArea);
+      }
+    }
   }
 
   // Event listeners for search and filter
